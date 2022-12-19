@@ -37,7 +37,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     func loadMapPins() {
         var annotations = [MKPointAnnotation]()
         var result = fetchPins()
-        print("\(result.count) - Pins are : \(result)")
         for pin in result{
             let annotation = MKPointAnnotation()
             annotation.coordinate.longitude = pin.longitude

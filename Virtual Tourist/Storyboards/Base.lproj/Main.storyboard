@@ -113,6 +113,10 @@
                                         </connections>
                                     </collectionViewCell>
                                 </cells>
+                                <connections>
+                                    <outlet property="dataSource" destination="jg1-hO-KBl" id="LPf-WU-BYv"/>
+                                    <outlet property="delegate" destination="jg1-hO-KBl" id="gjg-gm-uuc"/>
+                                </connections>
                             </collectionView>
                             <navigationBar contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ZgO-oH-ugo">
                                 <rect key="frame" x="0.0" y="0.0" width="393" height="44"/>
