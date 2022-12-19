@@ -9,6 +9,7 @@ import Foundation
 
 struct SearchRequest: Codable{
     let photos: PhotosDetails
+    let stat: String
     
     
     struct PhotosDetails: Codable{
@@ -17,7 +18,7 @@ struct SearchRequest: Codable{
         let perpage: Int
         let total: Int
         let photo: [PhotoDetails]
-        let stat: String
+
     }
     
     struct PhotoDetails: Codable{

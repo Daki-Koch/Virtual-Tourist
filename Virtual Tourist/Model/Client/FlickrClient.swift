@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+import UIKit
 
 class FlickrClient{
     
@@ -20,11 +20,11 @@ class FlickrClient{
         static let imageUrlBase = "https://live.staticflickr.com"
         
 
-        case searchWithCoordinates(Double, Double)
-        case imageUrl(String, String, String)
+        case searchWithCoordinates(Double, Double, Int)
+        case imageUrl(serverId: String, id: String, secret: String)
         var stringValue: String{
             switch self{
-            case .searchWithCoordinates(let lat, let long): return Endpoints.base + "/rest/?method=flickr.photos.search&api_key=\(Api.key)&lat=\(lat)&lon=\(long)&per_page=20&page=1&format=json&nojsoncallback=1"
+            case .searchWithCoordinates(let lat, let long, let page): return Endpoints.base + "/rest/?method=flickr.photos.search&api_key=\(Api.key)&lat=\(lat)&lon=\(long)&per_page=20&page=\(page)&format=json&nojsoncallback=1"
             case .imageUrl(let serverId, let id, let secret): return Endpoints.imageUrlBase + "/\(serverId)/\(id)_\(secret).jpg"
             }
                 
@@ -35,8 +35,42 @@ class FlickrClient{
         }
     }
     
-    class func getImageCollectionRequest(latitute: Double, longitude: Double, completion: @escaping ([SearchRequest.PhotoDetails], Error?) -> Void) {
-        let request = URLRequest(url: Endpoints.searchWithCoordinates(latitute, longitude).url)
+    class func getImageUrl(serverId: String, id: String, secret: String, completion: @escaping (UIImage?, Error?) -> Void?) {
+        let request = URLRequest(url: Endpoints.imageUrl(serverId: serverId, id: id, secret: secret).url)
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(nil, error)
+                }
+                return
+            }
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(nil, error)
+                }
+                return
+            }
+            do {
+                //let imageData = try JSONDecoder().decode(UIImage.self, from: data)
+                let imageData = UIImage(data: data)
+                DispatchQueue.main.async {
+                    
+                    completion(imageData, nil)
+                    
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(nil, error)
+                }
+                return
+            }
+        }
+        task.resume()
+    }
+    
+    class func getImageCollectionRequest(latitute: Double, longitude: Double, page: Int, completion: @escaping ([SearchRequest.PhotoDetails], Error?) -> Void?) {
+        let request = URLRequest(url: Endpoints.searchWithCoordinates(latitute, longitude, page).url)
+    
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 DispatchQueue.main.async {
@@ -52,6 +86,7 @@ class FlickrClient{
             }
             do {
                 let imageData = try JSONDecoder().decode(SearchRequest.self, from: data)
+                print(imageData)
                 DispatchQueue.main.async {
                     completion(imageData.photos.photo, nil)
                     
@@ -60,6 +95,7 @@ class FlickrClient{
                 DispatchQueue.main.async {
                     completion([], error)
                 }
+                return
             }
         }
         task.resume()
