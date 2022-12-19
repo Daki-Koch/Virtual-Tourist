@@ -79,8 +79,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let vc = segue.destination as? PhotoAlbumViewController{
             if let annotation = sender.self as? MKAnnotation{
-                //vc.pin.longitude = annotation.coordinate.longitude
-                //vc.pin.latitude = annotation.coordinate.latitude
+                vc.pin.longitude = annotation.coordinate.longitude
+                vc.pin.latitude = annotation.coordinate.latitude
                 print(annotation.coordinate.latitude)
                 vc.dataController = dataController
             }
