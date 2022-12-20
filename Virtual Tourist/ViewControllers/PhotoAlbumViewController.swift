@@ -28,6 +28,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        
         collectionView.delegate = self
         setMapView()
         let savedData = fetchSavedData()
@@ -36,7 +37,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             savedPhotos = savedData!
             reloadColletionView()
         } else {
+            newCollectionButton.isEnabled = false
             downloadNewPhotoAlbum()
+            newCollectionButton.isEnabled = true
             
         }
         
@@ -101,6 +104,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         }
         return currentPage
     }
+    
     func clearCoreData(){
         for photo in savedPhotos{
             dataController.viewContext.delete(photo)
@@ -119,12 +123,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
                 return
             }
             
-            DispatchQueue.main.async{
-                
-                self.saveToCoreData(photoAlbum: photoAlbum)
-                self.reloadColletionView()
-                
-            }
+            
+            self.saveToCoreData(photoAlbum: photoAlbum)
+            
+            
         }
         
     }
@@ -145,6 +147,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             
             
         }
+        self.reloadColletionView()
     }
     
     func reloadColletionView(){
@@ -158,26 +161,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         let photoToDelete = fetchedResultController.object(at: indexPath)
         dataController.viewContext.delete(photoToDelete)
         savedPhotos.remove(at: indexPath.row)
-        collectionView.reloadData()
+        reloadColletionView()
     }
-    func convertUrlToImage(urlString: String) -> UIImage{
-        
-        var photoImage = UIImage()
-        FlickrClient.getImageUrl(urlString: urlString) { data, error in
-            if let error = error {
-                print(error.localizedDescription)
-                return
-            }
-            guard let data = data else {
-                print("No data found.")
-                return
-            }
-            photoImage = data
-            print(photoImage)
-        }
-        
-        return photoImage
-    }
+
     func setImage(indexPath: IndexPath) -> UIImage?{
         let photo = fetchedResultController.object(at: indexPath)
         if let photoData = photo.image{
@@ -280,11 +266,5 @@ extension PhotoAlbumViewController: MKMapViewDelegate {
         mapView.addAnnotation(annotation)
         
     }
-}
-
-
-extension Data {
-    var uiImage: UIImage? { UIImage(data: self) }
-    
 }
 

@@ -21,6 +21,7 @@
 		631E42F3294DE0FE0034E9BA /* FlickrClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631E42F2294DE0FE0034E9BA /* FlickrClient.swift */; };
 		631E42F6294E50450034E9BA /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631E42F5294E50450034E9BA /* SceneDelegate.swift */; };
 		632F5BCD29520A8800F703AB /* showAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632F5BCC29520A8800F703AB /* showAlert.swift */; };
+		632F5BCF2952300600F703AB /* Data+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632F5BCE2952300600F703AB /* Data+Extension.swift */; };
 		63AC691C294F752900A8A8C7 /* SearchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63AC691B294F752900A8A8C7 /* SearchRequest.swift */; };
 		63BA2B69294F271000A0337B /* PhotoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63BA2B68294F271000A0337B /* PhotoCell.swift */; };
 /* End PBXBuildFile section */
@@ -61,6 +62,7 @@
 		631E42F2294DE0FE0034E9BA /* FlickrClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
 		631E42F5294E50450034E9BA /* SceneDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		632F5BCC29520A8800F703AB /* showAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = showAlert.swift; sourceTree = "<group>"; };
+		632F5BCE2952300600F703AB /* Data+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Extension.swift"; sourceTree = "<group>"; };
 		63AC691B294F752900A8A8C7 /* SearchRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchRequest.swift; sourceTree = "<group>"; };
 		63BA2B68294F271000A0337B /* PhotoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -175,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				632F5BCC29520A8800F703AB /* showAlert.swift */,
+				632F5BCE2952300600F703AB /* Data+Extension.swift */,
 			);
 			path = Helper;
 			sourceTree = "<group>";
@@ -343,6 +346,7 @@
 				63BA2B69294F271000A0337B /* PhotoCell.swift in Sources */,
 				631E42BE294DD6940034E9BA /* MapViewController.swift in Sources */,
 				631E42BA294DD6940034E9BA /* AppDelegate.swift in Sources */,
+				632F5BCF2952300600F703AB /* Data+Extension.swift in Sources */,
 				63AC691C294F752900A8A8C7 /* SearchRequest.swift in Sources */,
 				631E42F1294DDF680034E9BA /* PhotoAlbumViewController.swift in Sources */,
 			);
