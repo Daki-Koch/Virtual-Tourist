@@ -63,7 +63,7 @@ class FlickrClient{
     
     
     
-    class func getImageCollectionRequest(latitute: Double, longitude: Double, page: Int = 1, completion: @escaping (SearchRequest.PhotosDetails?, [SearchRequest.PhotoDetails], Error?) -> Void?) {
+    class func getImageCollectionRequest(latitute: Double, longitude: Double, page: Int, completion: @escaping (SearchRequest.PhotosDetails?, [SearchRequest.PhotoDetails], Error?) -> Void?) {
         let request = URLRequest(url: Endpoints.searchWithCoordinates(lat: latitute, long: longitude,page: page).url)
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
