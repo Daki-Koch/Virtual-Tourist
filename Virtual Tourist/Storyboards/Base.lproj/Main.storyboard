@@ -69,11 +69,16 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="783"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="gyS-Nx-wfY">
+                                <rect key="frame" x="0.0" y="49" width="393" height="187"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <standardMapConfiguration key="preferredConfiguration"/>
+                            </mapView>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" id="EuL-Aw-niE">
-                                <rect key="frame" x="0.0" y="234" width="393" height="512"/>
+                                <rect key="frame" x="0.0" y="222" width="393" height="512"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="a4l-O2-aug">
+                                <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="a4l-O2-aug">
                                     <size key="itemSize" width="128" height="128"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
@@ -134,11 +139,6 @@
                                     <action selector="newCollectionTapped:" destination="jg1-hO-KBl" eventType="touchUpInside" id="EJo-az-ssQ"/>
                                 </connections>
                             </button>
-                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="gyS-Nx-wfY">
-                                <rect key="frame" x="0.0" y="49" width="393" height="187"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <standardMapConfiguration key="preferredConfiguration"/>
-                            </mapView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vGT-y9-3iL"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -151,7 +151,6 @@
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="collectionView" destination="EuL-Aw-niE" id="Zbq-LE-Ne1"/>
-                        <outlet property="flowLayout" destination="a4l-O2-aug" id="x3O-x2-eEO"/>
                         <outlet property="mapView" destination="gyS-Nx-wfY" id="1Mg-g2-hH7"/>
                         <outlet property="newCollectionButton" destination="rPL-5V-7AA" id="o4g-7B-gs7"/>
                     </connections>

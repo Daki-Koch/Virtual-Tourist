@@ -14,7 +14,6 @@ import MapKit
 class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFetchedResultsControllerDelegate{
     
     
-    @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
     @IBOutlet weak var newCollectionButton: UIButton!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
@@ -24,15 +23,13 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     var pin: Pin!
     var fetchedResultController: NSFetchedResultsController<Photo>!
     var savedPhotos = [Photo]()
-    let numberOfColumns: CGFloat = 4
-    var photoImage: UIImage?
     var currentPage: Int = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         collectionView.delegate = self
-        createPinInMapView()
+        setMapView()
         let savedData = fetchSavedData()
         print(savedData!.count)
         if  savedData != nil && savedData!.count != 0  {
@@ -40,7 +37,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             reloadColletionView()
         } else {
             downloadNewPhotoAlbum()
-
+            
         }
         
     }
@@ -121,7 +118,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
                 print("No image could be found.")
                 return
             }
-
+            
             DispatchQueue.main.async{
                 
                 self.saveToCoreData(photoAlbum: photoAlbum)
@@ -138,6 +135,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             let photoData = Photo(context: self.dataController.viewContext)
             photoData.imageUrl = FlickrClient.Endpoints.imageUrl(serverId: photo.server, id: photo.id, secret: photo.secret).stringValue
             photoData.pin = self.pin
+            DispatchQueue.global(qos: .userInitiated).async{
+                photoData.image = try? Data(contentsOf: FlickrClient.Endpoints.imageUrl(serverId: photo.server, id: photo.id, secret: photo.secret).url)
+            }
+            
             self.savedPhotos.append(photoData)
             
             try? self.dataController.viewContext.save()
@@ -152,14 +153,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         }
     }
     
-    func createPinInMapView() {
-        
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
-        mapView.addAnnotation(annotation)
-        
-    }
-    
     func deletePhoto(indexPath: IndexPath){
         
         let photoToDelete = fetchedResultController.object(at: indexPath)
@@ -167,26 +160,31 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         savedPhotos.remove(at: indexPath.row)
         collectionView.reloadData()
     }
-    func convertUrlToImage(indexPath: IndexPath) -> UIImage?{
-        let photo = savedPhotos[indexPath.row]
+    func convertUrlToImage(urlString: String) -> UIImage{
         
-        if let urlString = photo.imageUrl{
-            FlickrClient.getImageUrl(urlString: urlString) { data, error in
-                if let error = error {
-                    print(error.localizedDescription)
-                    return
-                }
-                guard let data = data else {
-                    print("No data found.")
-                    return
-                }
-                self.photoImage = data
-                
+        var photoImage = UIImage()
+        FlickrClient.getImageUrl(urlString: urlString) { data, error in
+            if let error = error {
+                print(error.localizedDescription)
+                return
             }
+            guard let data = data else {
+                print("No data found.")
+                return
+            }
+            photoImage = data
+            print(photoImage)
         }
+        
         return photoImage
     }
-    func downloadImage(){
+    func setImage(indexPath: IndexPath) -> UIImage?{
+        let photo = fetchedResultController.object(at: indexPath)
+        if let photoData = photo.image{
+            return UIImage(data: photoData)
+        } else {
+            return nil
+        }
         
     }
     
@@ -197,6 +195,7 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
     // MARK: - Collection View data source.
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         //delete photo from collectionView and from data store.
+        
         showAlert(message: "Are you sure you want to delete this item?", title: "") { action in
             if action.title == "Delete"{
                 self.deletePhoto(indexPath: indexPath)
@@ -218,20 +217,74 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
         cell.activityIndicator.startAnimating()
-        if let photoImage = convertUrlToImage(indexPath: indexPath){
-            cell.imageView.image = photoImage
-        }
+        
+        cell.imageView.image = setImage(indexPath: indexPath)
+        
         cell.activityIndicator.stopAnimating()
         return cell
     }
     
-
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize
-    {
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let space:CGFloat = 3.0
         
-        let width  = (view.frame.width)/numberOfColumns
-        return CGSize(width: width, height: width)
+        let dimension = (view.frame.size.width - (2 * space)) / 3.0
+        
+        return CGSize(width: dimension, height: dimension)
+        
     }
     
     
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        
+        return 3
+        
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+        
+        return 3
+        
+    }
+    
+    
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        
+        if collectionView.numberOfItems(inSection: section) == 1 {
+            
+            let flowLayout = collectionViewLayout as! UICollectionViewFlowLayout
+            
+            return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: collectionView.frame.width - flowLayout.itemSize.width)
+            
+        }
+        return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        
+    }
+    
 }
+
+extension PhotoAlbumViewController: MKMapViewDelegate {
+    
+    
+    func setMapView() {
+        
+        let center: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
+        mapView.setCenter(center, animated: true)
+        let mySpan: MKCoordinateSpan = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        let myRegion: MKCoordinateRegion = MKCoordinateRegion(center: center, span: mySpan)
+        mapView.setRegion(myRegion, animated: true)
+        let annotation: MKPointAnnotation = MKPointAnnotation()
+        annotation.coordinate = center
+        mapView.addAnnotation(annotation)
+        
+    }
+}
+
+
+extension Data {
+    var uiImage: UIImage? { UIImage(data: self) }
+    
+}
+

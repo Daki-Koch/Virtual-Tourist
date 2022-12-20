@@ -26,7 +26,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         mapView.delegate = self
         
         let gestureRecognizer = UILongPressGestureRecognizer.init(target: self, action: #selector(handleTap(sender:)))
-        gestureRecognizer.minimumPressDuration = 1.5
+        gestureRecognizer.minimumPressDuration = 1
         mapView.addGestureRecognizer(gestureRecognizer)
         
         loadMapPins()
@@ -101,8 +101,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         mapView.addAnnotation(pinAnnotation)
     }
     
-    @objc func handleTap(sender: UITapGestureRecognizer){
-        if sender.state == .ended {
+    @objc func handleTap(sender: UILongPressGestureRecognizer){
+        if sender.state == .began {
             let location = sender.location(in: mapView)
             let coordinates = mapView.convert(location, toCoordinateFrom: mapView)
             addPinLocation(coordinates: coordinates)
