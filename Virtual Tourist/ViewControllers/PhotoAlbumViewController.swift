@@ -22,44 +22,27 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     
     var pin: Pin!
     var fetchedResultController: NSFetchedResultsController<Photo>!
-    var savedPhotos = [Photo]()
+    
     var currentPage: Int = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
+        mapView.delegate = self
         collectionView.delegate = self
         setMapView()
-        reloadColletionView()
+        fetchSavedData()
+        downloadNewPhotoAlbum()
         
         
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        let savedData = fetchSavedData()
-        print(savedData!.count)
-        if  savedData != nil && savedData!.count != 0  {
-            savedPhotos = savedData!
-            reloadColletionView()
-        } else {
-            newCollectionButton.isEnabled = false
-            downloadNewPhotoAlbum()
-            newCollectionButton.isEnabled = true
-            
-        }
-    }
-    
     
     
     @IBAction func newCollectionTapped(_ sender: Any) {
         clearCoreData()
         let newPage = Int.random(in: 1...fetchPages())
         downloadNewPhotoAlbum(page: newPage)
-        
-        
-        
+
     }
     
     @IBAction func Back(_ sender: Any) {
@@ -68,8 +51,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     
     
     // MARK: - Intital configuration
-    func fetchSavedData() -> [Photo]?{
-        var photosData: [Photo] = []
+    func fetchSavedData(){
+        
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         
         let predicate = NSPredicate(format: "pin == %@", pin)
@@ -82,16 +65,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         fetchedResultController.delegate = self
         
         try? fetchedResultController.performFetch()
-        do{
-            let photoCount = try fetchedResultController.managedObjectContext.count(for: fetchRequest)
-            for index in 0..<photoCount {
-                photosData.append(fetchedResultController.object(at: IndexPath(row: index, section: 0)))
-            }
-            return photosData
-        } catch {
-            print(error.localizedDescription)
-        }
-        return nil
         
         
     }
@@ -112,27 +85,29 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     }
     
     func clearCoreData(){
-        for photo in savedPhotos{
+        for photo in fetchedResultController.fetchedObjects!{
             dataController.viewContext.delete(photo)
         }
-        savedPhotos = []
+
     }
     
     func downloadNewPhotoAlbum(page: Int = 1){
-        FlickrClient.getImageCollectionRequest(latitute: pin.latitude, longitude: pin.longitude, page: page) { _, photoAlbum, error in
-            if let error = error {
-                print(error.localizedDescription)
-                return
+        if fetchedResultController.fetchedObjects?.count != 0{
+            self.collectionView.reloadData()
+            return
+        } else {
+            FlickrClient.getImageCollectionRequest(latitute: pin.latitude, longitude: pin.longitude, page: page) { _, photoAlbum, error in
+                if let error = error {
+                    self.showFailure(message: error.localizedDescription, title: "Error")
+                    return
+                }
+                guard photoAlbum.count > 0 else {
+                    self.showFailure(message: "No photo album was found", title: "No Data")
+                    return
+                }
+                
+                self.saveToCoreData(photoAlbum: photoAlbum)
             }
-            guard photoAlbum.count > 0 else {
-                print("No image could be found.")
-                return
-            }
-            
-            
-            self.saveToCoreData(photoAlbum: photoAlbum)
-            
-            
         }
         
     }
@@ -144,64 +119,21 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             photoData.imageUrl = FlickrClient.Endpoints.imageUrl(serverId: photo.server, id: photo.id, secret: photo.secret).stringValue
             photoData.pin = self.pin
             
-            
-            self.savedPhotos.append(photoData)
-            
             try? self.dataController.viewContext.save()
             
-            
         }
-        collectionView.reloadData()
+        self.collectionView.reloadData()
     }
     
-    func reloadColletionView(){
-        DispatchQueue.main.async{
-            
-            self.collectionView.reloadData()
-        }
-    }
+
     
-    func downloadImage(photo: Photo, indexPath: IndexPath){
-        
-        
-        
-        FlickrClient.getImageUrl(urlString: photo.imageUrl!) { data, error in
-            if let error = error{
-                print(error.localizedDescription)
-                return
-            }
-            guard let data = data else{
-                print("No data could be found.")
-                return
-            }
-            
-            photo.image = data
-            self.savedPhotos[indexPath.row].image = data
-            try? self.dataController.viewContext.save()
-        }
-        
-    }
     func deletePhoto(indexPath: IndexPath){
         
         let photoToDelete = fetchedResultController.object(at: indexPath)
         dataController.viewContext.delete(photoToDelete)
-        savedPhotos.remove(at: indexPath.row)
-        reloadColletionView()
+        try? dataController.viewContext.save()
+        self.collectionView.reloadData()
     }
-    
-    func setImage(indexPath: IndexPath) -> UIImage{
-        let photo = fetchedResultController.object(at: indexPath)
-        print(photo.image)
-        if let photoData = photo.image{
-            return UIImage(data: photoData)!
-        } else {
-            downloadImage(photo: photo, indexPath: indexPath)
-            return UIImage(data: savedPhotos[indexPath.row].image!)!
-            
-        }
-        
-    }
-    
     
 }
 
@@ -231,22 +163,39 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
-        cell.activityIndicator.startAnimating()
         
-        
-        if let savedImage = savedPhotos[indexPath.row].image{
+        if let imageData = fetchedResultController.object(at: indexPath).image{
             DispatchQueue.main.async {
-                cell.imageView.image = UIImage(data: savedImage)
+                cell.imageView.image = UIImage(data: imageData)!
             }
             
         } else {
-            DispatchQueue.main.async {
-                cell.imageView.image = self.setImage(indexPath: indexPath)
+            cell.activityIndicator.startAnimating()
+            if let imageUrl = fetchedResultController.object(at: indexPath).imageUrl{
+                FlickrClient.getImageUrl(urlString: imageUrl) { data, error in
+                    if let error = error{
+                        print(error.localizedDescription)
+                        return
+                    }
+                    guard let data = data else{
+                        print("No data could be found.")
+                        return
+                    }
+                    
+                    DispatchQueue.main.async {
+                        cell.activityIndicator.stopAnimating()
+                        cell.imageView.image = UIImage(data: data)
+                    }
+                    
+                    self.fetchedResultController.object(at: indexPath).image = data
+                    try? self.dataController.viewContext.save()
+                }
             }
+            
             
         }
         
-        cell.activityIndicator.stopAnimating()
+        
         return cell
     }
     
