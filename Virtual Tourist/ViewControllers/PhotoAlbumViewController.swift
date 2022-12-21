@@ -31,6 +31,13 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         
         collectionView.delegate = self
         setMapView()
+        reloadColletionView()
+        
+        
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         let savedData = fetchSavedData()
         print(savedData!.count)
         if  savedData != nil && savedData!.count != 0  {
@@ -42,7 +49,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             newCollectionButton.isEnabled = true
             
         }
-        
     }
     
     
@@ -137,9 +143,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             let photoData = Photo(context: self.dataController.viewContext)
             photoData.imageUrl = FlickrClient.Endpoints.imageUrl(serverId: photo.server, id: photo.id, secret: photo.secret).stringValue
             photoData.pin = self.pin
-            DispatchQueue.global(qos: .userInitiated).async{
-                photoData.image = try? Data(contentsOf: FlickrClient.Endpoints.imageUrl(serverId: photo.server, id: photo.id, secret: photo.secret).url)
-            }
+            
             
             self.savedPhotos.append(photoData)
             
@@ -147,15 +151,36 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             
             
         }
-        self.reloadColletionView()
+        collectionView.reloadData()
     }
     
     func reloadColletionView(){
         DispatchQueue.main.async{
+            
             self.collectionView.reloadData()
         }
     }
     
+    func downloadImage(photo: Photo, indexPath: IndexPath){
+        
+        
+        
+        FlickrClient.getImageUrl(urlString: photo.imageUrl!) { data, error in
+            if let error = error{
+                print(error.localizedDescription)
+                return
+            }
+            guard let data = data else{
+                print("No data could be found.")
+                return
+            }
+            
+            photo.image = data
+            self.savedPhotos[indexPath.row].image = data
+            try? self.dataController.viewContext.save()
+        }
+        
+    }
     func deletePhoto(indexPath: IndexPath){
         
         let photoToDelete = fetchedResultController.object(at: indexPath)
@@ -163,16 +188,20 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         savedPhotos.remove(at: indexPath.row)
         reloadColletionView()
     }
-
-    func setImage(indexPath: IndexPath) -> UIImage?{
+    
+    func setImage(indexPath: IndexPath) -> UIImage{
         let photo = fetchedResultController.object(at: indexPath)
+        print(photo.image)
         if let photoData = photo.image{
-            return UIImage(data: photoData)
+            return UIImage(data: photoData)!
         } else {
-            return nil
+            downloadImage(photo: photo, indexPath: indexPath)
+            return UIImage(data: savedPhotos[indexPath.row].image!)!
+            
         }
         
     }
+    
     
 }
 
@@ -204,7 +233,18 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
         cell.activityIndicator.startAnimating()
         
-        cell.imageView.image = setImage(indexPath: indexPath)
+        
+        if let savedImage = savedPhotos[indexPath.row].image{
+            DispatchQueue.main.async {
+                cell.imageView.image = UIImage(data: savedImage)
+            }
+            
+        } else {
+            DispatchQueue.main.async {
+                cell.imageView.image = self.setImage(indexPath: indexPath)
+            }
+            
+        }
         
         cell.activityIndicator.stopAnimating()
         return cell
@@ -248,6 +288,7 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         
     }
+    
     
 }
 

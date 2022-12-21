@@ -35,9 +35,10 @@ class FlickrClient{
         }
     }
     
-    class func getImageUrl(urlString: String, completion: @escaping (UIImage?, Error?) -> Void?) {
-        let request = URLRequest(url: URL(string: urlString)!)
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+    class func getImageUrl(urlString: String, completion: @escaping (Data?, Error?) -> Void?) {
+        let request = NSURLRequest(url: NSURL(string: urlString)! as URL)
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
             if let error = error {
                 DispatchQueue.main.async {
                     completion(nil, error)
@@ -45,16 +46,15 @@ class FlickrClient{
                 return
             }
             guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(nil, error)
-                }
+                
+                completion(nil, error)
+                
                 return
             }
-
-            let imageData = UIImage(data: data)
-            DispatchQueue.main.async {
-                completion(imageData, nil)
-            }
+            
+            
+            completion(data, nil)
+            
             
             
         }
