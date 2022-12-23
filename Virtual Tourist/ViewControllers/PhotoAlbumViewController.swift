@@ -41,7 +41,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     
     @IBAction func newCollectionTapped(_ sender: Any) {
         clearCoreData()
-        
+        let numPage = min(fetchPages(),4000/20)
+        let newPage = Int.random(in: 1...numPage)
+        downloadNewPhotoAlbum(page: newPage)
+        fetchSavedData()
+        debugPrint(fetchedResultController.fetchedObjects)
         
 
     }
@@ -73,11 +77,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     func fetchPages() -> Int {
         FlickrClient.getImageCollectionRequest(latitute: pin.latitude, longitude: pin.longitude, page: 1) { albumDetails, _, error in
             if let error = error {
-                print(error.localizedDescription)
+                self.showFailure(message: error.localizedDescription, title: "Error")
                 return
             }
             guard let albumDetails = albumDetails else{
-                print("No album details could be found.")
+                self.showFailure(message: "No album details could be found.", title: "Missing Data")
                 return
             }
             self.currentPage = albumDetails.pages
@@ -91,11 +95,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
                 dataController.viewContext.delete(photo)
                 try? dataController.viewContext.save()
             }
-            let newPage = Int.random(in: 1...fetchPages())
-            downloadNewPhotoAlbum(page: newPage)
-            
-            fetchSavedData()
-            collectionView.reloadData()
         }
     }
     
@@ -110,7 +109,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
                     return
                 }
                 guard photoAlbum.count > 0 else {
-                    self.showFailure(message: "No photo album was found", title: "No Data")
+                    self.showFailure(message: "No photo album was found", title: "Missing Data")
                     return
                 }
                 
@@ -183,11 +182,11 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
             if let imageUrl = cellImage.imageUrl{
                 FlickrClient.getImageUrl(urlString: imageUrl) { data, error in
                     if let error = error{
-                        print(error.localizedDescription)
+                        self.showFailure(message: error.localizedDescription, title: "Error")
                         return
                     }
                     guard let data = data else{
-                        print("No data could be found.")
+                        self.showFailure(message: "No data was found", title: "Missing Data")
                         return
                     }
                     
@@ -196,8 +195,11 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
                         cell.imageView.image = UIImage(data: data)
                     }
                     
-                    cellImage.image = data
-                    try! self.dataController.viewContext.save()
+                    DispatchQueue.main.async {
+                        cellImage.image = data
+                        try? self.dataController.viewContext.save()
+                    }
+                    
                 }
             }
             
