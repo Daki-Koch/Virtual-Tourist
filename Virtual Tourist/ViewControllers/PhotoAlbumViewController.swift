@@ -28,20 +28,21 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        newCollectionButton.isEnabled = false
         mapView.delegate = self
         collectionView.delegate = self
         setMapView()
         fetchSavedData()
         downloadNewPhotoAlbum()
-        
+        newCollectionButton.isEnabled = true
         
     }
     
     
     @IBAction func newCollectionTapped(_ sender: Any) {
         clearCoreData()
-        let newPage = Int.random(in: 1...fetchPages())
-        downloadNewPhotoAlbum(page: newPage)
+        
+        
 
     }
     
@@ -85,10 +86,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
     }
     
     func clearCoreData(){
-        for photo in fetchedResultController.fetchedObjects!{
-            dataController.viewContext.delete(photo)
+        if let photos = fetchedResultController.fetchedObjects{
+            for photo in photos{
+                dataController.viewContext.delete(photo)
+                try? dataController.viewContext.save()
+            }
+            let newPage = Int.random(in: 1...fetchPages())
+            downloadNewPhotoAlbum(page: newPage)
+            
+            fetchSavedData()
+            collectionView.reloadData()
         }
-
     }
     
     func downloadNewPhotoAlbum(page: Int = 1){
@@ -107,6 +115,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
                 }
                 
                 self.saveToCoreData(photoAlbum: photoAlbum)
+                self.collectionView.reloadData()
             }
         }
         
@@ -122,10 +131,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
             try? self.dataController.viewContext.save()
             
         }
-        self.collectionView.reloadData()
+        
     }
-    
-
     
     func deletePhoto(indexPath: IndexPath){
         
@@ -135,6 +142,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         self.collectionView.reloadData()
     }
     
+ 
 }
 
 extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout{
@@ -158,20 +166,21 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // return the number of photos in the flickr album
+        fetchSavedData()
         return fetchedResultController.sections?[section].numberOfObjects ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
-        
-        if let imageData = fetchedResultController.object(at: indexPath).image{
+        let cellImage = fetchedResultController.object(at: indexPath)
+        if let imageData = cellImage.image{
             DispatchQueue.main.async {
                 cell.imageView.image = UIImage(data: imageData)!
             }
             
         } else {
             cell.activityIndicator.startAnimating()
-            if let imageUrl = fetchedResultController.object(at: indexPath).imageUrl{
+            if let imageUrl = cellImage.imageUrl{
                 FlickrClient.getImageUrl(urlString: imageUrl) { data, error in
                     if let error = error{
                         print(error.localizedDescription)
@@ -187,15 +196,12 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
                         cell.imageView.image = UIImage(data: data)
                     }
                     
-                    self.fetchedResultController.object(at: indexPath).image = data
-                    try? self.dataController.viewContext.save()
+                    cellImage.image = data
+                    try! self.dataController.viewContext.save()
                 }
             }
             
-            
         }
-        
-        
         return cell
     }
     

@@ -10,7 +10,6 @@ import CoreData
 
 class DataController {
     let persistentContainer: NSPersistentContainer
-    static let shared = DataController(modelName: "VirtualTourist")
     
     var viewContext: NSManagedObjectContext{
         return persistentContainer.viewContext
@@ -26,7 +25,6 @@ class DataController {
                 fatalError(error!.localizedDescription)
             }
             self.autoSaveViewContext()
-            //self.configureContexts()
             completion?()
         }
     }
