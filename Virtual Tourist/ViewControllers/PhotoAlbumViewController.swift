@@ -29,25 +29,30 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         super.viewDidLoad()
         
         newCollectionButton.isEnabled = false
-        mapView.delegate = self
-        collectionView.delegate = self
         setMapView()
         fetchSavedData()
-        downloadNewPhotoAlbum()
+        downloadNewPhotoAlbum {
+            self.collectionView.reloadData()
+        }
         newCollectionButton.isEnabled = true
         
     }
     
     
     @IBAction func newCollectionTapped(_ sender: Any) {
-        clearCoreData()
-        let numPage = min(fetchPages(),4000/20)
-        let newPage = Int.random(in: 1...numPage)
-        downloadNewPhotoAlbum(page: newPage)
-        fetchSavedData()
-        debugPrint(fetchedResultController.fetchedObjects)
+        self.newCollectionButton.isEnabled = false
+        clearCoreData {
+            self.fetchSavedData()
+            let numPage = min(self.fetchPages(),4000/20)
+            let newPage = Int.random(in: 1...numPage)
+            self.downloadNewPhotoAlbum(page: newPage) {
+                
+                self.collectionView.reloadData()
+                self.newCollectionButton.isEnabled = true
+                
+            }
+        }
         
-
     }
     
     @IBAction func Back(_ sender: Any) {
@@ -89,19 +94,25 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         return currentPage
     }
     
-    func clearCoreData(){
-        if let photos = fetchedResultController.fetchedObjects{
-            for photo in photos{
-                dataController.viewContext.delete(photo)
-                try? dataController.viewContext.save()
-            }
+    func clearCoreData(completion: @escaping () -> Void){
+        
+        for photo in fetchedResultController.fetchedObjects!{
+            dataController.viewContext.delete(photo)
+            
         }
+        try? dataController.viewContext.save()
+        DispatchQueue.main.async {
+            completion()
+        }
+        
     }
     
-    func downloadNewPhotoAlbum(page: Int = 1){
+    func downloadNewPhotoAlbum(page: Int = 1, completion: @escaping () -> Void){
         if fetchedResultController.fetchedObjects?.count != 0{
-            self.collectionView.reloadData()
-            return
+            DispatchQueue.main.async {
+                completion()
+            }
+            
         } else {
             FlickrClient.getImageCollectionRequest(latitute: pin.latitude, longitude: pin.longitude, page: page) { _, photoAlbum, error in
                 if let error = error {
@@ -112,9 +123,13 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
                     self.showFailure(message: "No photo album was found", title: "Missing Data")
                     return
                 }
-                
                 self.saveToCoreData(photoAlbum: photoAlbum)
-                self.collectionView.reloadData()
+                
+                DispatchQueue.main.async {
+                    
+                    completion()
+                }
+                
             }
         }
         
@@ -141,7 +156,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, NSFe
         self.collectionView.reloadData()
     }
     
- 
+    
 }
 
 extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout{
